@@ -32,13 +32,6 @@ jobs:
         run: |
           export TZ='Asia/Shanghai'
           yarn install
-      - name: 5. 生成页面并压缩
-        run: |
-          export TZ='Asia/Shanghai'
-          yarn run build
-          cp -r ./static ./public
-          cp sync.yml ./public/.github/workflows/
-          cp package-public.json ./public/package.json
       - name: 6. 部署页面
         uses: JamesIves/github-pages-deploy-action@v4.2.5
         with:
