@@ -1,53 +1,50 @@
-name: 自动部署
-#当有改动推送到master分支时，启动Action
+name: Hexo Blog CI
+
 on:
-  push:
-    branches:
-      - main
-  release:
-    types:
-      - published
+  push:
+    branches:
+      - main
+
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: 检查分支
-        uses: actions/checkout@v2
-        with:
-          ref: main
-      - name: 安装 Node
-        uses: actions/setup-node@v1
-        with:
-          node-version: "18.x"
-      - name: 安装 Hexo
-        run: |
-          export TZ='Asia/Shanghai'
-          npm install hexo-cli -g
-      - name: 缓存 Hexo
-        id: cache-npm
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-node-modules
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
-      - name: 安装依赖
-        if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
-        run: |
-          npm install --save
-      - name: 生成静态文件
-        run: |
-          hexo clean
-          hexo generate
-      - name: 部署到Github
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          token: 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
-          repository-name: BilShiziheng/stoneblogwithazy
-          branch: main
-          folder: public
-          commit-message: "${{ github.event.head_commit.message }} Updated By Github Actions"
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.x]
+    steps:
+      - name: 1. 检查master分支
+        uses: actions/checkout@master
+
+      - name: 2. 设置Node.js
+        uses: actions/setup-node@master
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: 3. 缓存
+        uses: actions/cache@v2
+        id: cache-dependencies
+        with:
+          path: node_modules
+          key: ${{runner.OS}}-${{hashFiles('**/yarn.lock')}}
+
+      - name: 4. 安装插件
+        if: steps.cache-dependencies.outputs.cache-hit != 'true'
+        run: |
+          export TZ='Asia/Shanghai'
+          yarn install
+      - name: 5. 生成页面并压缩
+        run: |
+          export TZ='Asia/Shanghai'
+          yarn run build
+          cp -r ./static ./public
+          cp sync.yml ./public/.github/workflows/
+          cp package-public.json ./public/package.json
+      - name: 6. 部署页面
+        uses: JamesIves/github-pages-deploy-action@v4.2.5
+        with:
+          branch: master
+          folder: public
+          repository-name: BilShiziheng/stoneblogwithazy
+          clean: false
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
+=
