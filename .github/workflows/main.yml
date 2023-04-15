@@ -32,8 +32,8 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan github.com >> ~/.ssh/known_hosts
           # 配置git
-          git config  user.email "shizihenh@163.com"  
-          git config  user.name "BilShiziheng"
+          git config user.email "shizihenh@163.com"  
+          git config user.name "BilShiziheng"
           # 安装hexo
           npm install hexo-cli -g
           npm install
